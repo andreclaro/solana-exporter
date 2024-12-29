@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/asymmetric-research/solana-exporter/pkg/rpc"
 	"github.com/asymmetric-research/solana-exporter/pkg/slog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -43,6 +44,7 @@ type SolanaCollector struct {
 	NodeNumSlotsBehind      *GaugeDesc
 	NodeMinimumLedgerSlot   *GaugeDesc
 	NodeFirstAvailableBlock *GaugeDesc
+	NodeIsActive            *GaugeDesc
 }
 
 func NewSolanaCollector(client *rpc.Client, config *ExporterConfig) *SolanaCollector {
@@ -96,6 +98,11 @@ func NewSolanaCollector(client *rpc.Client, config *ExporterConfig) *SolanaColle
 			"solana_node_first_available_block",
 			"The slot of the lowest confirmed block that has not been purged from the node's ledger.",
 		),
+		NodeIsActive: NewGaugeDesc(
+			"solana_node_is_active",
+			"Whether the node is active and participating in consensus.",
+			NodekeyLabel,
+		),
 	}
 	return collector
 }
@@ -111,6 +118,7 @@ func (c *SolanaCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.NodeNumSlotsBehind.Desc
 	ch <- c.NodeMinimumLedgerSlot.Desc
 	ch <- c.NodeFirstAvailableBlock.Desc
+	ch <- c.NodeIsActive.Desc
 }
 
 func (c *SolanaCollector) collectVoteAccounts(ctx context.Context, ch chan<- prometheus.Metric) {
@@ -244,6 +252,28 @@ func (c *SolanaCollector) collectHealth(ctx context.Context, ch chan<- prometheu
 	return
 }
 
+func (c *SolanaCollector) collectNodeIdentityPubKey(ctx context.Context, ch chan<- prometheus.Metric) {
+	c.logger.Info("Collecting node identity pubkey...")
+
+	nodeIdentityPubkey, err := c.rpcClient.GetIdentity(ctx)
+	if err != nil {
+		c.logger.Errorf("failed to get node identity: %v", err)
+		ch <- c.NodeIsActive.NewInvalidMetric(err)
+		return
+	}
+
+	isActive := 0
+	for _, configuredKey := range c.config.NodeKeys {
+		if configuredKey == nodeIdentityPubkey {
+			isActive = 1
+			break
+		}
+	}
+
+	ch <- c.NodeIsActive.MustNewConstMetric(float64(isActive), nodeIdentityPubkey)
+	c.logger.Info("Node identity pubkey collected.")
+}
+
 func (c *SolanaCollector) Collect(ch chan<- prometheus.Metric) {
 	c.logger.Info("========== BEGIN COLLECTION ==========")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -255,6 +285,7 @@ func (c *SolanaCollector) Collect(ch chan<- prometheus.Metric) {
 	c.collectVoteAccounts(ctx, ch)
 	c.collectVersion(ctx, ch)
 	c.collectBalances(ctx, ch)
+	c.collectNodeIdentityPubKey(ctx, ch)
 
 	c.logger.Info("=========== END COLLECTION ===========")
 }

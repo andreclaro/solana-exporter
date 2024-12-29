@@ -72,6 +72,7 @@ The table below describes all the metrics collected by the `solana-exporter`:
 | `solana_account_balance`                       | Solana account balances.                                                                 | `address`                     |
 | `solana_node_version`                          | Node version of solana.*                                                                 | `version`                     |
 | `solana_node_is_healthy`                       | Whether the node is healthy.*                                                            | N/A                           |
+| `solana_node_is_active`                        | Whether the node is active and participating in consensus.                              | `nodekey`                     |
 | `solana_node_num_slots_behind`                 | The number of slots that the node is behind the latest cluster confirmed slot.*          | N/A                           |
 | `solana_node_minimum_ledger_slot`              | The lowest slot that the node has information about in its ledger.*                      | N/A                           |
 | `solana_node_first_available_block`            | The slot of the lowest confirmed block that has not been purged from the node's ledger.* | N/A                           |

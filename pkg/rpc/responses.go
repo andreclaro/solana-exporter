@@ -88,6 +88,10 @@ type (
 			} `json:"message"`
 		} `json:"transaction"`
 	}
+
+	NodeIdentity struct {
+		Identity string `json:"identity"`
+	}
 )
 
 func (e *RPCError) Error() string {

@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/asymmetric-research/solana-exporter/pkg/rpc"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"math/rand"
 	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/asymmetric-research/solana-exporter/pkg/rpc"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
 type (
@@ -235,6 +236,9 @@ func TestSolanaCollector(t *testing.T) {
 		),
 		collector.NodeVersion.makeCollectionTest(
 			NewLV(1, "v1.0.0"),
+		),
+		collector.NodeIsActive.makeCollectionTest(
+			NewLV(1),
 		),
 		collector.NodeIsHealthy.makeCollectionTest(
 			NewLV(1),
